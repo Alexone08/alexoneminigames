@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="css/mcheads.css">
+    <title>Generatore di Profili Minecraft</title>
+</head>
+<body>
+    <div class="container">
+        <h1>Generatore di Profili Minecraft</h1>
+        <div class="controls">
+            <label for="username">Nome utente Minecraft:</label>
+            <input type="text" id="username" placeholder="Inserisci il nome utente">
+            <button id="loadAvatarBtn">Carica Avatar</button>
+        </div>
+        <div class="controls">
+            <label for="imageType">Tipo di Immagine:</label>
+            <select id="imageType">
+                <option value="head">Head</option>
+                <option value="avatar">Avatar</option>
+                <option value="body">Body</option>
+            </select>
+        </div>
+        <div class="avatar-section">
+            <canvas id="profileCanvas" width="256" height="256"></canvas>
+            <button id="downloadBtn">Scarica Immagine</button>
+        </div>
+        <div class="controls">
+            <label for="color1">Colore Gradiente Iniziale:</label>
+            <input type="color" id="color1" value="#800080">
+            <label for="color2">Colore Gradiente Finale:</label>
+            <input type="color" id="color2" value="#ff00ff">
+        </div>
+        <div class="controls">
+            <label for="transparentBg">Sfondo Trasparente:</label>
+            <input type="checkbox" id="transparentBg">
+        </div>
+        
+    </div>
+    <footer>
+        <p>&copy; 2024 Alexone. Tutti i diritti riservati..</p>
+    </footer>
+    <script src="js/mcheads.js"></script>
+</body>
+</html>

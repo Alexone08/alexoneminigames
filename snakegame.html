@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snake Game</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            height: 100vh;
+            background: linear-gradient(to bottom right, #4a148c, #9c27b0);
+            color: white;
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+        }
+        canvas {
+            border: 2px solid #fff;
+            border-radius: 20px;
+            background-color: #f1e1f6;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            animation: pulse 15s infinite;
+        }
+        h1 {
+            position: relative;
+            margin-bottom: 20px;
+            font-size: 28px;
+            text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.7);
+            animation: fadeIn 1s ease-in-out;
+        }
+        #score {
+            color: #ffffff;
+        }
+
+        footer {
+            position: absolute;
+            bottom: 20px;
+            text-align: center;
+            font-size: 14px;
+            color: #ffffff;
+            animation: fadeIn 1s ease-in-out;
+        }
+
+        .controls {
+            display: none;
+            position: absolute;
+            bottom: 80px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .arrow-row {
+            display: flex;
+        }
+
+        .arrow {
+            width: 60px;
+            height: 60px;
+            margin: 5px;
+            border-radius: 50%;
+            background-color: #9c27b0;
+            color: white;
+            font-size: 24px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            cursor: pointer;
+            user-select: none;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+
+        .arrow:hover {
+            background-color: #7b1fa2;
+            transform: scale(1.1);
+        }
+
+        .arrow:active {
+            transform: scale(0.95);
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Pulsing effect for food */
+        @keyframes foodPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+
+        /* Animation for game over alert */
+        .game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            color: #000;
+            font-size: 24px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            display: none; /* Hidden by default */
+            animation: fadeIn 1s ease-in-out;
+        }
+
+        /* Mostra i controlli solo sui dispositivi mobili */
+        @media (max-width: 768px) {
+            .controls {
+                display: flex;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Snake Game - Punteggio: <span id="score">0</span></h1>
+    <canvas id="gameCanvas" width="350" height="350"></canvas>
+
+    <!-- Controlli per dispositivi mobili -->
+    <div class="controls">
+        <div class="arrow-row">
+            <div class="arrow" id="up">&#9650;</div>
+        </div>
+        <div class="arrow-row">
+            <div class="arrow" id="left">&#9664;</div>
+            <div class="arrow" id="down">&#9660;</div>
+            <div class="arrow" id="right">&#9654;</div>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2024 Alexone. Tutti i diritti riservati.</p>
+    </footer>
+
+    <!-- Aggiunta della musica di sottofondo -->
+    <audio id="backgroundMusic" loop>
+        <source src="savana.mp3" type="audio/mpeg">
+        Your browser does not support the audio element.
+    </audio>
+
+    <!-- Elemento per il messaggio di Game Over -->
+    <div class="game-over" id="gameOverMessage">Game Over! Punteggio: <span id="finalScore">0</span><br><button id="restartBtn">Riprendi Gioco</button></div>
+
+    <script>
+        // Avvia la musica di sottofondo
+        const music = document.getElementById('backgroundMusic');
+        music.volume = 0.5; // Regola il volume
+        music.play();
+
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreDisplay = document.getElementById('score');
+        const gameOverMessage = document.getElementById('gameOverMessage');
+        const finalScoreDisplay = document.getElementById('finalScore');
+        const restartBtn = document.getElementById('restartBtn');
+
+        let snake, direction, food, score, game;
+
+        // Inizializza il gioco
+        function init() {
+            snake = [{ x: 10, y: 10 }];
+            direction = { x: 0, y: 0 };
+            food = { x: 15, y: 15 };
+            score = 0;
+            scoreDisplay.innerText = score;
+            gameOverMessage.style.display = 'none'; // Nascondi messaggio di Game Over
+            if (game) clearInterval(game);  // Ferma il gioco precedente
+            game = setInterval(draw, 200);  // Avvia un nuovo gioco
+        }
+
+        // Disegna il gioco
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Disegna il cibo con effetto di pulsazione
+            ctx.fillStyle = '#be5dff';
+            ctx.save(); // Salva lo stato corrente del contesto
+            ctx.translate(food.x * 20 + 10, food.y * 20 + 10); // Posiziona al centro
+            ctx.scale(1.2, 1.2); // Effetto di ingrandimento
+            ctx.fillRect(-10, -10, 20, 20); // Disegna il cibo
+            ctx.restore(); // Ripristina lo stato del contesto
+
+            // Disegna il serpente
+            snake.forEach((segment, index) => {
+                ctx.fillStyle = index === 0 ? '#d32f2f' : '#4a148c'; 
+                ctx.fillRect(segment.x * 20, segment.y * 20, 20, 20);
+            });
+
+            // Muovi il serpente
+            const head = { x: snake[0].x + direction.x, y: snake[0].y + direction.y };
+            snake.unshift(head);
+
+            // Controlla cibo
+            if (head.x === food.x && head.y === food.y) {
+                score++;
+                scoreDisplay.innerText = score;
+                food.x = Math.floor(Math.random() * canvas.width / 20);
+                food.y = Math.floor(Math.random() * canvas.height / 20);
+            } else {
+                snake.pop();
+            }
+
+            // Controllo per collisioni
+            if (head.x < 0 || head.x >= canvas.width / 20 || head.y < 0 || head.y >= canvas.height / 20 || snake.slice(1).some(segment => segment.x === head.x && segment.y === head.y)) {
+                clearInterval(game);
+                music.pause();  // Ferma la musica al termine del gioco
+                finalScoreDisplay.innerText = score;
+                gameOverMessage.style.display = 'block'; // Mostra il messaggio di Game Over
+            }
+        }
+
+        // Cambia la direzione del serpente
+        function changeDirection(event) {
+            switch (event.key) {
+                case 'ArrowUp':
+                    if (direction.y === 0) {
+                        direction = { x: 0, y: -1 };
+                    }
+                    break;
+                case 'ArrowDown':
+                    if (direction.y === 0) {
+                        direction = { x: 0, y: 1 };
+                    }
+                    break;
+                case 'ArrowLeft':
+                    if (direction.x === 0) {
+                        direction = { x: -1, y: 0 };
+                    }
+                    break;
+                case 'ArrowRight':
+                    if (direction.x === 0) {
+                        direction = { x: 1, y: 0 };
+                    }
+                    break;
+            }
+        }
+
+        // Event listener per tasti direzionali
+        document.addEventListener('keydown', changeDirection);
+
+        // Gestione dei pulsanti touch su mobile
+        document.getElementById('up').addEventListener('click', () => {
+            if (direction.y === 0) {
+                direction = { x: 0, y: -1 };
+            }
+        });
+        document.getElementById('down').addEventListener('click', () => {
+            if (direction.y === 0) {
+                direction = { x: 0, y: 1 };
+            }
+        });
+        document.getElementById('left').addEventListener('click', () => {
+            if (direction.x === 0) {
+                direction = { x: -1, y: 0 };
+            }
+        });
+        document.getElementById('right').addEventListener('click', () => {
+            if (direction.x === 0) {
+                direction = { x: 1, y: 0 };
+            }
+        });
+
+        // Riconnessione al gioco
+        restartBtn.addEventListener('click', () => {
+            init();
+            music.play(); // Riavvia la musica quando riprendi il gioco
+        });
+
+        // Inizializza il gioco per la prima volta
+        init();
+    </script>
+</body>
+</html>
